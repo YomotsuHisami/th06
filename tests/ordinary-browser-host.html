@@ -48,7 +48,7 @@
       await send("configure", {
         music: "none",
         resources: [],
-        sharedResources: [{ url: "/assets/msgothic.ttc", path: "/msgothic.ttc" }],
+        sharedResources: [{ url: "/__ordinary_font", path: "/msgothic.ttc" }],
         thpracCatalog: [],
         options,
       });
@@ -70,6 +70,6 @@
     }
   });
 
-  iframe.src = `/build-web-ordinary-audit-clean/th06.html?hosted=1&runtimeVariant=ordinary&runtimeEpoch=${epoch}`;
+  iframe.src = `/__runtime/th06.html?hosted=1&runtimeVariant=ordinary&runtimeEpoch=${epoch}`;
 })();
 </script>

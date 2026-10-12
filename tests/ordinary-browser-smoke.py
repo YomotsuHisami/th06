@@ -17,8 +17,28 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 class FixtureHandler(http.server.SimpleHTTPRequestHandler):
     fixture: Path
+    runtime_directory: Path
+    font: Path
+
+    def translate_path(self, path: str) -> str:
+        if path.startswith("/__runtime/"):
+            previous = self.directory
+            try:
+                self.directory = str(self.runtime_directory)
+                return super().translate_path(path[len("/__runtime"):])
+            finally:
+                self.directory = previous
+        return super().translate_path(path)
 
     def do_GET(self) -> None:
+        if self.path.split("?", 1)[0] == "/__ordinary_font":
+            data = self.font.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "font/otf")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
         if self.path.split("?", 1)[0] == "/__ordinary_replay_fixture.rpy":
             data = self.fixture.read_bytes()
             self.send_response(200)
@@ -77,9 +97,13 @@ def run_gate(
     port: int,
     headed: bool,
     timeout: float,
+    runtime_directory: Path,
+    font: Path,
 ) -> None:
     handler = functools.partial(FixtureHandler, directory=str(ROOT))
     FixtureHandler.fixture = fixture
+    FixtureHandler.runtime_directory = runtime_directory
+    FixtureHandler.font = font
     with socketserver.TCPServer(("127.0.0.1", port), handler) as server:
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
@@ -111,7 +135,9 @@ def run_gate(
                         break
                     time.sleep(0.1)
                 else:
-                    page.screenshot(path=str(fixture.parent / f"th06-{mode}-timeout.png"), full_page=True)
+                    output = ROOT / "artifacts/ordinary-browser-smoke"
+                    output.mkdir(parents=True, exist_ok=True)
+                    page.screenshot(path=str(output / f"{mode}-timeout.png"), full_page=True)
                     raise RuntimeError(f"{mode} timeout; state={state}; console={console_messages[-20:]}")
                 browser.close()
         finally:
@@ -130,17 +156,23 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", choices=("replay", "music-room"))
     parser.add_argument("--fixture", type=Path, required=True)
+    parser.add_argument("--runtime-directory", type=Path, default=ROOT / "build/web/normal")
+    parser.add_argument("--font", type=Path, required=True)
     parser.add_argument("--port", type=int, default=8136)
     parser.add_argument("--headed", action="store_true")
     parser.add_argument("--timeout", type=float, default=90.0)
     args = parser.parse_args()
     validate_fixture(args.fixture)
+    if not (args.runtime_directory / "th06.html").is_file() or not args.font.is_file():
+        parser.error("需要已构建 Runtime 目录和显式字体文件")
     run_gate(
         args.mode,
         args.fixture.resolve(),
         args.port,
         args.headed,
         args.timeout,
+        args.runtime_directory.resolve(),
+        args.font.resolve(),
     )
     return 0
 

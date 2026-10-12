@@ -35,6 +35,7 @@ namespace THPrac::Gui
 {
 void ShowLicenceInfo();
 }
+#endif
 
 // GAMEMANAGER_REINIT is also used by ordinary stage progression, so Replay
 // teardown cannot be attached to that Supervisor state globally.  A thprac
@@ -57,7 +58,6 @@ static void ResetTouchReplayForPracticeRestart()
     ReplayExtension::ResetRecording();
     g_ResetReplayOnReinit = true;
 }
-#endif
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
@@ -543,6 +543,7 @@ void DrawOverlay()
                 ImGui::TextUnformatted("thprac v2.3.0.3");
                 ImGui::TextUnformatted("github.com/touhouworldcup/thprac");
                 ImGui::TextUnformatted("Thanks: You!");
+#if defined(THPRAC_PORTABLE_ENABLED)
                 if (ImGui::Button(g_AdvancedOptions.showLicense ? hideLicense[locale] : showLicense[locale]))
                     g_AdvancedOptions.showLicense = !g_AdvancedOptions.showLicense;
                 if (g_AdvancedOptions.showLicense)
@@ -551,6 +552,7 @@ void DrawOverlay()
                     THPrac::Gui::ShowLicenceInfo();
                     ImGui::EndChild();
                 }
+#endif
                 ImGui::Unindent();
             }
             ImGui::SetWindowFocus();
@@ -648,13 +650,9 @@ bool PreserveBgmOnRestart()
 
 bool ConsumeReplayResetOnReinit()
 {
-#if defined(THPRAC_PORTABLE_ENABLED)
     const bool requested = g_ResetReplayOnReinit;
     g_ResetReplayOnReinit = false;
     return requested;
-#else
-    return false;
-#endif
 }
 
 void FinishBgmRestartPreservation()
