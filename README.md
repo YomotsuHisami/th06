@@ -1,3 +1,9 @@
+> **已归档 | Archived**
+>
+> 本 `eagler` 分支已归档。后续开发与维护请前往 [eagler-touhou/th06](https://github.com/YomotsuHisami/eagler-touhou/tree/launcher-refactor/th06)。
+
+---
+
 **Eagler branch:**
 Hosted Web Runtime protocol, browser integration, persistence, touch, practice and multiplayer details are documented in [README_EAGLER.md](README_EAGLER.md).
 
